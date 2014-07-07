@@ -72,6 +72,33 @@ var ChunkFactory = Base.extend({
     var name = x+","+y
     this.chunks[name] = null
     delete this.chunks[name]
+  },
+  preloadChunks: function(x, y, unloadDistance) {
+    console.log("Preloading chunks: "+x+","+y)
+    if(unloadDistance) {
+      for(var key in this.chunks) {
+        var pos = key.split(",")
+        var xx = parseInt(pos[0])
+        var yy = parseInt(pos[1])
+        if(Math.abs(xx-x)>unloadDistance || Math.abs(yy-y)>unloadDistance) {
+          this.unloadChunk(xx, yy)
+        }
+      }
+    }
+    this.loadChunk(x-1,y-1)
+    this.loadChunk(x-1,y)
+    this.loadChunk(x-1,y+1)
+    this.loadChunk(x,y-1)
+    this.loadChunk(x,y)
+    this.loadChunk(x,y+1)
+    this.loadChunk(x+1,y-1)
+    this.loadChunk(x+1,y)
+    this.loadChunk(x+1,y+1)
+    var cnt = 0
+    for(var key in this.chunks) {
+      cnt++
+    }
+    console.log("Total chunks: "+cnt)
   }
 })
 
@@ -89,15 +116,9 @@ var GameMap = Base.extend({
     }
   },
   preloadChunks: function() {
-    this.cf.loadChunk(-1,-1)
-    this.cf.loadChunk(-1,0)
-    this.cf.loadChunk(-1,1)
-    this.cf.loadChunk(0,-1)
-    this.cf.loadChunk(0,0)
-    this.cf.loadChunk(0,1)
-    this.cf.loadChunk(1,-1)
-    this.cf.loadChunk(1,0)
-    this.cf.loadChunk(1,1)
+    var xx = Math.floor(this.x/16)
+    var yy = Math.floor(this.y/16)
+    this.cf.preloadChunks(xx, yy, 3)
   },
   put: function(x, y, tile) {
       var cx = Math.floor(x / 16)
@@ -141,13 +162,13 @@ var App = Base.extend({
     this.gameTime = 0
     this.lastTime = 0
     this.ctx = null
+    this.frame = 0
   },
   // run once - load resources, create GUI...
   init: function() {
     console.log("App initializing...")
 
     this.gm = new GameMap()
-    this.gm.preloadChunks()
     this.currentTile = this.gm.backTile
 
       // Create the canvas
@@ -212,11 +233,14 @@ var App = Base.extend({
     requestAnimFrame(foo);
   },
   update: function(dt) {
+
     this.gameTime += dt;
-
     this.handleInput(dt);
+    if(this.frame % 30 == 0) {
+      this.gm.preloadChunks()
+    }
+    this.frame++
   },
-
   // Draw everything
   render: function() {
       //console.log("Rendering...")
