@@ -1,0 +1,40 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>WTF</title>
+
+  <link rel="stylesheet" href="css/style.css" />
+  <script src="js/jquery-2.1.0.min.js" type="text/javascript"></script>
+  <script src="js/Resources.js" type="text/javascript"></script>
+  <script src="js/input.js" type="text/javascript"></script>
+  <script src="js/Base.js" type="text/javascript"></script>
+  <script src="js/Sprite.js" type="text/javascript"></script>
+  <script src="js/App.js" type="text/javascript"></script>
+
+</head>
+
+<body>
+
+<canvas>
+</canvas>
+
+<script>
+$(function() {
+	var init = function() {
+		var app = new App()
+		app.init()
+	}
+
+	resources.load([
+	    'images/scifi-tileset.png',
+	    'images/metal-tileset.png'
+	]);
+	resources.onReady(init);
+})
+</script>
+
+</body>
+
+</html>
