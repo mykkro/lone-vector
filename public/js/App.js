@@ -148,6 +148,7 @@ var App = Base.extend({
 
     this.gm = new GameMap()
     this.gm.preloadChunks()
+    this.currentTile = this.gm.backTile
 
       // Create the canvas
   	var canvas = document.createElement("canvas");
@@ -170,6 +171,23 @@ var App = Base.extend({
       self.paint(mouseX, mouseY)
      }
     });
+
+    $("#tileset").click(function(event) {
+      var $this = $(this);
+      var parentOffset = $this.parent().offset();
+      var offset = $this.offset()
+      var mouseX = event.pageX - parentOffset.left - offset.left;
+      var mouseY = event.pageY - parentOffset.top - offset.top;     
+      var px = Math.floor(mouseX/32)
+      var py = Math.floor(mouseY/32)
+      self.currentTile = {
+        image: resources.get('images/scifi-tileset.png'),
+        x: px,
+        y: py
+      }
+      console.log(mouseX+","+mouseY+"  "+px+","+py)
+    })
+
     lastTime = Date.now();
     this.main();
 
@@ -177,8 +195,7 @@ var App = Base.extend({
   paint: function(mouseX, mouseY) {
     var x = Math.floor(mouseX / 32) + this.gm.x
     var y = Math.floor(mouseY / 32) + this.gm.y
-    var tile = this.gm.backTile
-    this.gm.put(x, y, tile)
+    this.gm.put(x, y, this.currentTile)
   },
   main: function() {
     var now = Date.now();
