@@ -11,12 +11,16 @@ var createEmptyChunk = function(x, y, texture, size, emptyIndex) {
 		x: x,
 		y: y,
 		size: size,
-		texture: texture,
-		empty: emptyIndex,
-		tiles: []
+		layers: {
+			ground: {
+				texture: texture,
+				empty: emptyIndex,
+				tiles: []
+			}
+		}
 	}
 	for(var i=0; i<size*size; i++) {
-		chunk.tiles.push(emptyIndex)
+		chunk.layers.ground.tiles.push(emptyIndex)
 	}
 	writeChunk(x, y, chunk)
 	return chunk
@@ -44,12 +48,12 @@ var writeChunkData = function(x, y, regions) {
 	for(var i=0; i<regions.length; i++) {
 		var reg = regions[i]
 		/* TODO smarter regions */
-		chunk.tiles = reg.tiles
+		chunk.layers.ground.tiles = reg.tiles
 	}
 	writeChunk(x, y, chunk)
 	return chunk
 }
-/*
+
 var precreateEmptyChunks = function(x1, x2, y1, y2) {
 	for(var x=x1; x<=x2; x++) {
 		for(var y=x1; y<=y2; y++) {
@@ -58,8 +62,8 @@ var precreateEmptyChunks = function(x1, x2, y1, y2) {
 	}
 }
 
-precreateEmptyChunks(-10, 10, -10, 10)
-*/
+//precreateEmptyChunks(-10, 10, -10, 10)
+
 io.on('connection', function(socket){
   console.log('a user connected');
   socket.on('disconnect', function(){

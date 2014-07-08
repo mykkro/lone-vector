@@ -17,43 +17,39 @@ var Chunk = Base.extend({
     this.x = x
     this.y = y
     this.size = 16
-    this.tiles = []      
-    this.texture = resources.get('images/scifi-tileset.png'),
-    this.empty = 13 + 9*16
+    this.layers = {
+      ground: {
+        texture: 'images/scifi-tileset.png',
+        empty: 13 + 9*16,
+        tiles: []
+      }
+    }      
+    this.layers.ground.textureRes = resources.get(this.layers.ground.texture)
     this.fillEmpty()
     this.loaded = false
-  },
-  fillRandomly: function() {
-    for(var i=0; i<this.size; i++) {
-      for(var j=0; j<this.size; j++) {
-        this.tiles.push(this.randomTile())
-      }
-    }
   },
   fillEmpty: function() {
     for(var i=0; i<this.size; i++) {
       for(var j=0; j<this.size; j++) {
-        this.tiles.push(this.empty)
+        this.layers.ground.tiles.push(this.layers.ground.empty)
       }
     }
-  },
-  randomTile: function() {
-    return Math.floor(Math.random()*16) + 16*Math.floor(Math.random()*8*11)
   },
   load: function() {
     console.log("Loading chunk "+this.x+","+this.y)
     var self = this
     $.getJSON("chunks/"+this.x+","+this.y+".json").done(function(data) {
       console.log("Chunk loaded: ", data)
-      self.tiles = data.tiles
+      self.layers = data.layers
+      self.layers.ground.textureRes = resources.get(self.layers.ground.texture)
       self.loaded = true
     })
   },
   getTile: function(x, y) {
-    return this.tiles[x + this.size*y]
+    return this.layers.ground.tiles[x + this.size*y]
   },
   setTile: function(x, y, tile) {
-    this.tiles[x + this.size*y] = tile
+    this.layers.ground.tiles[x + this.size*y] = tile
     this.changed = true
   },
   render: function(ctx) {
@@ -61,14 +57,15 @@ var Chunk = Base.extend({
     for(var i=0; i<this.size; i++) {
       for(var j=0; j<this.size; j++) {
         var ndx = i*this.size+j
-        var tile = this.tiles[ndx]
+        var tile = this.layers.ground.tiles[ndx]
         var tx = tile % 16
         var ty = Math.floor(tile / 16)
-        ctx.drawImage(this.texture, tx*size, ty*size, size, size, j*size, i*size, size, size)
+        ctx.drawImage(this.layers.ground.textureRes, tx*size, ty*size, size, size, j*size, i*size, size, size)
       }
     }
   }
 })
+
 
 var ChunkFactory = Base.extend({
   constructor: function(socket) {
@@ -126,7 +123,7 @@ var ChunkFactory = Base.extend({
   },
   saveChunk: function(x, y, chunk) {
     if(chunk.loaded) {
-      var regions = [{ tiles: chunk.tiles }]
+      var regions = [{ tiles: chunk.layers.ground.tiles }]
       console.log("Saving chunk "+x+","+y)
       this.socket.emit("chunk edit", {x:x, y:y, regions:regions})
     }
@@ -186,13 +183,18 @@ var GameMap = Base.extend({
         var tile, tx, ty, texture
         if(chunk) {
           tile = chunk.getTile(x, y)
-          texture = chunk.texture
+          texture = chunk.layers.ground.textureRes
         } else {
           tile = this.empty
           texture = this.defaultTexture
         }
         tx = tile % 16
         ty = Math.floor(tile / 16)
+        ctx.fillStyle = "#333"; 
+        if((cx+cy)%2==0) {
+          ctx.fillStyle="#111"
+        }
+        ctx.fillRect(j*size,i*size,size,size);
         ctx.drawImage(texture, tx*size, ty*size, size, size, j*size, i*size, size, size)
       }
     }
