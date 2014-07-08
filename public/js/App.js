@@ -13,16 +13,32 @@ var requestAnimFrame = (function(){
 
 
 var Chunk = Base.extend({
-  constructor: function() {
+  constructor: function(x, y) {
+    this.x = x
+    this.y = y
     this.width = 16
     this.height = 16
     this.tiles = []      
     this.changed = false
+    this.emptyTile = {
+      image: resources.get('images/scifi-tileset.png'),
+      x: 13,
+      y: 9
+    }
+    this.fillEmpty()
+    this.loaded = false
   },
   fillRandomly: function() {
     for(var i=0; i<this.height; i++) {
       for(var j=0; j<this.width; j++) {
         this.tiles.push(this.randomTile())
+      }
+    }
+  },
+  fillEmpty: function() {
+    for(var i=0; i<this.height; i++) {
+      for(var j=0; j<this.width; j++) {
+        this.tiles.push(this.emptyTile)
       }
     }
   },
@@ -32,6 +48,21 @@ var Chunk = Base.extend({
       x: Math.floor(Math.random()*16),
       y: Math.floor(Math.random()*8*11)
     }
+  },
+  load: function() {
+    console.log("Loading chunk "+this.x+","+this.y)
+    var self = this
+    $.getJSON("chunks/"+this.x+","+this.y+".json").done(function(data) {
+      console.log("Chunk loaded: ", data)
+      for(var i=0; i<data.tiles.length; i++) {
+        var pos = data.tiles[i]
+        var xx = pos % 16
+        var yy = Math.floor(pos / 16)
+        self.tiles[i].x = xx
+        self.tiles[i].y = yy
+      }
+      self.loaded = true
+    })
   },
   getTile: function(x, y) {
     return this.tiles[x + this.width*y]
@@ -53,8 +84,9 @@ var Chunk = Base.extend({
 })
 
 var ChunkFactory = Base.extend({
-  constructor: function() {
+  constructor: function(socket) {
     this.chunks = {}
+    this.socket = socket
   },
   getChunk: function(x, y) {
     var name = x+","+y
@@ -63,9 +95,9 @@ var ChunkFactory = Base.extend({
   loadChunk: function(x, y) {
     var name = x+","+y
     if(!this.getChunk(x, y)) {
-      var chunk = new Chunk()
-      chunk.fillRandomly()
+      var chunk = new Chunk(x, y)
       this.chunks[name] = chunk
+      chunk.load()
     }
   },
   unloadChunk: function(x, y) {
@@ -74,13 +106,18 @@ var ChunkFactory = Base.extend({
     delete this.chunks[name]
   },
   preloadChunks: function(x, y, unloadDistance) {
-    console.log("Preloading chunks: "+x+","+y)
+    //console.log("Preloading chunks: "+x+","+y)
     if(unloadDistance) {
       for(var key in this.chunks) {
         var pos = key.split(",")
         var xx = parseInt(pos[0])
         var yy = parseInt(pos[1])
+        var chunk = this.chunks[key]
         if(Math.abs(xx-x)>unloadDistance || Math.abs(yy-y)>unloadDistance) {
+          if(chunk.changed) {
+            this.saveChunk(xx, yy, chunk)
+            chunk.changed = false
+          }
           this.unloadChunk(xx, yy)
         }
       }
@@ -98,13 +135,36 @@ var ChunkFactory = Base.extend({
     for(var key in this.chunks) {
       cnt++
     }
-    console.log("Total chunks: "+cnt)
+    //console.log("Total chunks: "+cnt)
+  },
+  saveChunk: function(x, y, chunk) {
+    //if(chunk.loaded) {
+      var tiles = []
+      for(var i=0; i<chunk.tiles.length; i++) {
+        tiles.push(chunk.tiles[i].x + 16*chunk.tiles[i].y)
+      }
+      var regions = [{ tiles: tiles }]
+      console.log("Saving chunk "+x+","+y)
+      this.socket.emit("chunk edit", {x:x, y:y, regions:regions})
+    //}
+  },
+  saveChangedChunks: function() {
+    for(var key in this.chunks) {
+      var chunk = this.chunks[key]
+      if(chunk.changed) {
+        var pos = key.split(",")
+        var xx = parseInt(pos[0])
+        var yy = parseInt(pos[1])
+        this.saveChunk(xx, yy, chunk)
+        chunk.changed = false
+      }
+    }
   }
 })
 
 var GameMap = Base.extend({
-  constructor: function() {
-    this.cf = new ChunkFactory()
+  constructor: function(socket) {
+    this.cf = new ChunkFactory(socket)
     this.x = 0
     this.y = 0
     this.width = 16
@@ -119,6 +179,10 @@ var GameMap = Base.extend({
     var xx = Math.floor(this.x/16)
     var yy = Math.floor(this.y/16)
     this.cf.preloadChunks(xx, yy, 3)
+  },
+  saveChangedChunks: function() {
+    console.log("Saving changed chunks...")
+    this.cf.saveChangedChunks()
   },
   put: function(x, y, tile) {
       var cx = Math.floor(x / 16)
@@ -168,7 +232,9 @@ var App = Base.extend({
   init: function() {
     console.log("App initializing...")
 
-    this.gm = new GameMap()
+    this.socket = io();
+
+    this.gm = new GameMap(this.socket)
     this.currentTile = this.gm.backTile
 
       // Create the canvas
@@ -209,6 +275,17 @@ var App = Base.extend({
       console.log(mouseX+","+mouseY+"  "+px+","+py)
     })
 
+
+    this.socket.on('response', function(data){
+      console.log(data);
+    });
+  /*
+  $('#btn1').click(function(){
+    socket.emit('chat message', {"foo":"bar"});
+    return false;
+  });
+*/
+
     lastTime = Date.now();
     this.main();
 
@@ -238,6 +315,9 @@ var App = Base.extend({
     this.handleInput(dt);
     if(this.frame % 30 == 0) {
       this.gm.preloadChunks()
+    }
+    if(this.frame % 3600 == 0) {
+      this.gm.saveChangedChunks(this.socket)
     }
     this.frame++
   },

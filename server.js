@@ -56,6 +56,10 @@ io.on('connection', function(socket){
     console.log('message: ' + msg);
     socket.emit('response', { data: msg });
   });
+  socket.on('chunk edit', function(msg){
+    console.log('chunk data: ' + msg);
+    writeChunkData(msg.x, msg.y, msg.regions)
+  });
 });
 
 http.listen(3000, function(){
