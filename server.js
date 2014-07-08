@@ -15,6 +15,9 @@ var createEmptyChunk = function(x, y, texture, size, emptyIndex) {
 		empty: emptyIndex,
 		tiles: []
 	}
+	for(var i=0; i<size*size; i++) {
+		chunk.tiles.push(emptyIndex)
+	}
 	writeChunk(x, y, chunk)
 	return chunk
 }
@@ -32,7 +35,7 @@ var loadChunk = function(x, y) {
 		var json = fs.readFileSync("public/chunks/"+filename, "utf8")
 		return JSON.parse(json)
 	} else {
-		return createEmptyChunk(x, y, "images/scifi-tileset.png", 16, 0)
+		return createEmptyChunk(x, y, "images/scifi-tileset.png", 16, 13+9*16)
 	}
 }
 
@@ -46,7 +49,17 @@ var writeChunkData = function(x, y, regions) {
 	writeChunk(x, y, chunk)
 	return chunk
 }
+/*
+var precreateEmptyChunks = function(x1, x2, y1, y2) {
+	for(var x=x1; x<=x2; x++) {
+		for(var y=x1; y<=y2; y++) {
+			 createEmptyChunk(x, y, "images/scifi-tileset.png", 16, 13+9*16)
+		}
+	}
+}
 
+precreateEmptyChunks(-10, 10, -10, 10)
+*/
 io.on('connection', function(socket){
   console.log('a user connected');
   socket.on('disconnect', function(){
@@ -59,6 +72,10 @@ io.on('connection', function(socket){
   socket.on('chunk edit', function(msg){
     console.log('chunk data: ' + msg);
     writeChunkData(msg.x, msg.y, msg.regions)
+  });
+  socket.on('chunk get', function(msg){
+    console.log('chunk get: ' + msg);
+    socket.emit('chunk response', loadChunk(msg.x, msg.y));
   });
 });
 

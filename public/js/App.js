@@ -16,68 +16,55 @@ var Chunk = Base.extend({
   constructor: function(x, y) {
     this.x = x
     this.y = y
-    this.width = 16
-    this.height = 16
+    this.size = 16
     this.tiles = []      
-    this.changed = false
-    this.emptyTile = {
-      image: resources.get('images/scifi-tileset.png'),
-      x: 13,
-      y: 9
-    }
+    this.texture = resources.get('images/scifi-tileset.png'),
+    this.empty = 13 + 9*16
     this.fillEmpty()
     this.loaded = false
   },
   fillRandomly: function() {
-    for(var i=0; i<this.height; i++) {
-      for(var j=0; j<this.width; j++) {
+    for(var i=0; i<this.size; i++) {
+      for(var j=0; j<this.size; j++) {
         this.tiles.push(this.randomTile())
       }
     }
   },
   fillEmpty: function() {
-    for(var i=0; i<this.height; i++) {
-      for(var j=0; j<this.width; j++) {
-        this.tiles.push(this.emptyTile)
+    for(var i=0; i<this.size; i++) {
+      for(var j=0; j<this.size; j++) {
+        this.tiles.push(this.empty)
       }
     }
   },
   randomTile: function() {
-    return {
-      image: resources.get('images/scifi-tileset.png'),
-      x: Math.floor(Math.random()*16),
-      y: Math.floor(Math.random()*8*11)
-    }
+    return Math.floor(Math.random()*16) + 16*Math.floor(Math.random()*8*11)
   },
   load: function() {
     console.log("Loading chunk "+this.x+","+this.y)
     var self = this
     $.getJSON("chunks/"+this.x+","+this.y+".json").done(function(data) {
       console.log("Chunk loaded: ", data)
-      for(var i=0; i<data.tiles.length; i++) {
-        var pos = data.tiles[i]
-        var xx = pos % 16
-        var yy = Math.floor(pos / 16)
-        self.tiles[i].x = xx
-        self.tiles[i].y = yy
-      }
+      self.tiles = data.tiles
       self.loaded = true
     })
   },
   getTile: function(x, y) {
-    return this.tiles[x + this.width*y]
+    return this.tiles[x + this.size*y]
   },
   setTile: function(x, y, tile) {
-    this.tiles[x + this.width*y] = tile
+    this.tiles[x + this.size*y] = tile
     this.changed = true
   },
   render: function(ctx) {
     var size = 32
-    for(var i=0; i<this.height; i++) {
-      for(var j=0; j<this.width; j++) {
-        var ndx = i*this.width+j
+    for(var i=0; i<this.size; i++) {
+      for(var j=0; j<this.size; j++) {
+        var ndx = i*this.size+j
         var tile = this.tiles[ndx]
-        ctx.drawImage(tile.image, tile.x*size, tile.y*size, size, size, j*size, i*size, size, size)
+        var tx = tile % 16
+        var ty = Math.floor(tile / 16)
+        ctx.drawImage(this.texture, tx*size, ty*size, size, size, j*size, i*size, size, size)
       }
     }
   }
@@ -138,15 +125,11 @@ var ChunkFactory = Base.extend({
     //console.log("Total chunks: "+cnt)
   },
   saveChunk: function(x, y, chunk) {
-    //if(chunk.loaded) {
-      var tiles = []
-      for(var i=0; i<chunk.tiles.length; i++) {
-        tiles.push(chunk.tiles[i].x + 16*chunk.tiles[i].y)
-      }
-      var regions = [{ tiles: tiles }]
+    if(chunk.loaded) {
+      var regions = [{ tiles: chunk.tiles }]
       console.log("Saving chunk "+x+","+y)
       this.socket.emit("chunk edit", {x:x, y:y, regions:regions})
-    //}
+    }
   },
   saveChangedChunks: function() {
     for(var key in this.chunks) {
@@ -169,11 +152,8 @@ var GameMap = Base.extend({
     this.y = 0
     this.width = 16
     this.height = 14
-    this.backTile = {
-      image: resources.get('images/scifi-tileset.png'),
-      x: 2,
-      y: 9
-    }
+    this.empty = 13 + 16*9
+    this.defaultTexture = resources.get('images/scifi-tileset.png')
   },
   preloadChunks: function() {
     var xx = Math.floor(this.x/16)
@@ -203,13 +183,17 @@ var GameMap = Base.extend({
         var x = ((xx % 16) + 16)%16
         var y = ((yy % 16) + 16)%16
         var chunk = this.cf.getChunk(cx, cy)
-        var tile
+        var tile, tx, ty, texture
         if(chunk) {
           tile = chunk.getTile(x, y)
+          texture = chunk.texture
         } else {
-          tile = this.backTile
+          tile = this.empty
+          texture = this.defaultTexture
         }
-        ctx.drawImage(tile.image, tile.x*size, tile.y*size, size, size, j*size, i*size, size, size)
+        tx = tile % 16
+        ty = Math.floor(tile / 16)
+        ctx.drawImage(texture, tx*size, ty*size, size, size, j*size, i*size, size, size)
       }
     }
   }
@@ -235,7 +219,7 @@ var App = Base.extend({
     this.socket = io();
 
     this.gm = new GameMap(this.socket)
-    this.currentTile = this.gm.backTile
+    this.currentTile = this.gm.empty
 
       // Create the canvas
   	var canvas = document.createElement("canvas");
@@ -267,11 +251,7 @@ var App = Base.extend({
       var mouseY = event.pageY - parentOffset.top - offset.top;     
       var px = Math.floor(mouseX/32)
       var py = Math.floor(mouseY/32)
-      self.currentTile = {
-        image: resources.get('images/scifi-tileset.png'),
-        x: px,
-        y: py
-      }
+      self.currentTile = px + py*16
       console.log(mouseX+","+mouseY+"  "+px+","+py)
     })
 
@@ -327,25 +307,30 @@ var App = Base.extend({
       this.ctx.clearRect ( 0 , 0 , 512 , 512 );
       this.gm.render(this.ctx)
   },
+  moveMap: function(dx, dy) {
+    this.gm.x += dx
+    this.gm.y += dy
+    $("#map-position").text(this.gm.x+","+this.gm.y)
+  },
   handleInput: function(dt) {
     if(input.isDown('DOWN') || input.isDown('s')) {
         //console.log("Down")
-        this.gm.y++
+        this.moveMap(0,1)
     }
 
     if(input.isDown('UP') || input.isDown('w')) {
         //console.log("Up")
-        this.gm.y--
+        this.moveMap(0,-1)
     }
 
     if(input.isDown('LEFT') || input.isDown('a')) {
         //console.log("Left")
-        this.gm.x--
+        this.moveMap(-1,0)
     }
 
     if(input.isDown('RIGHT') || input.isDown('d')) {
         //console.log("Right")
-        this.gm.x++
+        this.moveMap(1,0)
     }
 
     if(input.isDown('SPACE')) {
