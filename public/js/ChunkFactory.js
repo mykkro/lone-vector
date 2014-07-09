@@ -54,7 +54,15 @@ var ChunkFactory = Base.extend({
   },
   saveChunk: function(x, y, chunk) {
     if(chunk.loaded) {
-      var regions = [{ tiles: chunk.layers.ground.tiles }]
+      var regions = []
+      for(key in chunk.layers) {
+        var layer = chunk.layers[key]
+        if(layer.changed) {
+          console.log("Writing changed layer: "+x+","+y+","+key)
+          regions.push({layer: key, tiles: layer.tiles})
+          layer.changed = false
+        }
+      }
       console.log("Saving chunk "+x+","+y)
       this.socket.emit("chunk edit", {x:x, y:y, regions:regions})
     }

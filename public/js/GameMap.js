@@ -15,13 +15,13 @@ var GameMap = Base.extend({
     console.log("Saving changed chunks...")
     this.cf.saveChangedChunks()
   },
-  put: function(x, y, tile) {
+  put: function(layer, x, y, tile) {
       var cx = Math.floor(x / 16)
       var cy = Math.floor(y / 16)
       var x = ((x % 16) + 16)%16
       var y = ((y % 16) + 16)%16
       var chunk = this.cf.getChunk(cx, cy)
-      chunk.setTile(x, y, tile)
+      chunk.setTile(layer, x, y, tile)
   },
   render: function(ctx) {
     var size = 32
@@ -41,11 +41,21 @@ var GameMap = Base.extend({
         var chunk = this.cf.getChunk(cx, cy)
         var tile, tx, ty, texture
         if(chunk) {
-          tile = chunk.getTile(x, y)
-          texture = chunk.layers.ground.textureRes
-          tx = tile % 16
-          ty = Math.floor(tile / 16)
-          ctx.drawImage(texture, tx*size, ty*size, size, size, j*size, i*size, size, size)
+          // ground layer...
+          if(chunk.layers.ground) {
+            tile = chunk.layers.ground.getTile(x, y)
+            chunk.layers.ground.renderTile(ctx, j, i, tile)
+          }
+          // obstacles...
+          if(chunk.layers.obstacles) {
+            tile = chunk.layers.obstacles.getTile(x, y)
+            chunk.layers.obstacles.renderTile(ctx, j, i, tile)
+          }
+          // overlay...
+          if(chunk.layers.overlay) {
+            tile = chunk.layers.overlay.getTile(x, y)
+            chunk.layers.overlay.renderTile(ctx, j, i, tile)
+          }
         }
       }
     }

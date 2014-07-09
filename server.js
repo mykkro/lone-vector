@@ -16,11 +16,23 @@ var createEmptyChunk = function(x, y, texture, size, emptyIndex) {
 				texture: texture,
 				empty: emptyIndex,
 				tiles: []
+			},
+			obstacles: {
+				texture: texture,
+				empty: emptyIndex,
+				tiles: []
+			},
+			overlay: {
+				texture: texture,
+				empty: emptyIndex,
+				tiles: []
 			}
 		}
 	}
 	for(var i=0; i<size*size; i++) {
 		chunk.layers.ground.tiles.push(emptyIndex)
+		chunk.layers.obstacles.tiles.push(emptyIndex)
+		chunk.layers.overlay.tiles.push(emptyIndex)
 	}
 	writeChunk(x, y, chunk)
 	return chunk
@@ -47,9 +59,12 @@ var writeChunkData = function(x, y, regions) {
 	var chunk = loadChunk(x, y)
 	for(var i=0; i<regions.length; i++) {
 		var reg = regions[i]
+		var layer = reg.layer
+		var tiles = reg.tiles
 		/* TODO smarter regions */
-		chunk.layers.ground.tiles = reg.tiles
+		chunk.layers[layer].tiles = tiles
 	}
+	console.log(chunk)
 	writeChunk(x, y, chunk)
 	return chunk
 }

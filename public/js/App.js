@@ -14,6 +14,7 @@ var App = Base.extend({
 
     this.gm = new GameMap(this.socket)
     this.currentTile = 9*16+13
+    this.currentLayer = "overlay"
 
       // Create the canvas
   	var canvas = document.createElement("canvas");
@@ -49,6 +50,29 @@ var App = Base.extend({
       console.log(mouseX+","+mouseY+"  "+px+","+py)
     })
 
+    var selectLayer = function(name) {
+      self.currentLayer = name
+      $("#layer-selector button").removeClass("selected")
+      $("#layer-selector button."+name).addClass("selected")
+    }
+
+    var selectGround = function() {
+      selectLayer("ground")
+    }
+    var selectObstacles = function() {
+      selectLayer("obstacles")
+    }
+    var selectOverlay = function() {
+      selectLayer("overlay")
+    }
+
+    $("#layer-selector").append(
+      $("<button>").addClass("ground").text("ground").click(selectGround),
+      $("<button>").addClass("obstacles").text("obstacles").click(selectObstacles),
+      $("<button>").addClass("overlay").text("overlay").click(selectOverlay)
+    )
+
+    selectGround()
 
     this.socket.on('response', function(data){
       console.log(data);
@@ -67,7 +91,7 @@ var App = Base.extend({
   paint: function(mouseX, mouseY) {
     var x = Math.floor(mouseX / 32) + this.gm.x
     var y = Math.floor(mouseY / 32) + this.gm.y
-    this.gm.put(x, y, this.currentTile)
+    this.gm.put(this.currentLayer, x, y, this.currentTile)
   },
   main: function() {
     var now = Date.now();

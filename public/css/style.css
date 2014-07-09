@@ -6,3 +6,7 @@ body {
 	background:#222;
 	color: #aaa;
 } 
+
+button.selected {
+	color: red;
+}

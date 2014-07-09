@@ -4,9 +4,13 @@ var Chunk = Base.extend({
     this.y = y
     this.size = 16
     this.layers = {
-      ground: new ChunkLayer(this)
+      ground: new ChunkLayer(this),
+      obstacles: new ChunkLayer(this),
+      overlay: new ChunkLayer(this)
     }      
     this.layers.ground.clear()
+    this.layers.obstacles.clear()
+    this.layers.overlay.clear()
     this.loaded = false
   },
   load: function() {
@@ -16,14 +20,16 @@ var Chunk = Base.extend({
       console.log("Chunk loaded: ", data)
       self.layers = data.layers
       self.layers.ground = new ChunkLayer(self, self.layers.ground)
+      self.layers.obstacles = new ChunkLayer(self, self.layers.obstacles)
+      self.layers.overlay = new ChunkLayer(self, self.layers.overlay)
       self.loaded = true
     })
   },
-  getTile: function(x, y) {
-    return this.layers.ground.tiles[x + this.size*y]
+  getTile: function(layer, x, y) {
+    return this.layers[layer].getTile(x, y)
   },
-  setTile: function(x, y, tile) {
-    this.layers.ground.tiles[x + this.size*y] = tile
+  setTile: function(layer, x, y, tile) {
+    this.layers[layer].setTile(x, y, tile)
     this.changed = true
   }
 })
