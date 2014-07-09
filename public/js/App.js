@@ -77,6 +77,8 @@ var App = Base.extend({
     this.socket.on('response', function(data){
       console.log(data);
     });
+
+    this.shipSprite = new Sprite('images/flyer-88x83.png', [88*3,83*4], [88,83], 0, 1)
   /*
   $('#btn1').click(function(){
     socket.emit('chat message', {"foo":"bar"});
@@ -99,6 +101,7 @@ var App = Base.extend({
 
     this.update(dt);
     this.render();
+    this.shipSprite.render(this.ctx)
 
     this.lastTime = now;
     var self = this
