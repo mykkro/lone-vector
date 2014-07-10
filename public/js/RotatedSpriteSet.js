@@ -1,12 +1,10 @@
 
-var RotatedSpriteSet = Base.extend({
+var RotatedSpriteSet = SpriteBase.extend({
     /* 6*6 grid */
     /* angle in degrees */
-    constructor: function(url, width, height, angle) {
-        this.width = width;
-        this.height = height;
+    constructor: function(url, width, height, refx, refy, angle) {
+        this.base(url, width, height, refx, refy)
         this.angle = angle
-        this.url = url;
     },
     render: function(ctx) {
         var w = this.width
@@ -18,7 +16,8 @@ var RotatedSpriteSet = Base.extend({
         ctx.drawImage(resources.get(this.url),
                       xx, yy,
                       w, h,
-                      0, 0,
+                      this.x - this.refx, 
+                      this.y - this.refy,
                       w, h);
     }
 })

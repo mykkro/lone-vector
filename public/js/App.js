@@ -78,7 +78,13 @@ var App = Base.extend({
       console.log(data);
     });
 
-    this.shipSprite = new RotatedSpriteSet('images/flyer-88x83.png', 88, 83, 0)
+    this.shipSprite = new RotatedSpriteSet('images/flyer-88x83.png', 88, 83, 44, 42, 0)
+    this.shipSprite.x = 32*8
+    this.shipSprite.y = 32*8
+
+    this.expSprite = new AnimatedSprite('images/M484ExplosionSet1.png', 34, 34, 17, 17, 90, 8, 8)
+    this.expSprite.x = 200
+    this.expSprite.y = 300
   /*
   $('#btn1').click(function(){
     socket.emit('chat message', {"foo":"bar"});
@@ -122,6 +128,9 @@ var App = Base.extend({
     this.frame++
 
     /**/this.shipSprite.angle+=5;/**/
+    if(this.frame % 4 == 0) {
+    /**/this.expSprite.frame = (this.expSprite.frame+1)%8;/**/
+    }
   },
   // Draw everything
   render: function() {
@@ -131,6 +140,7 @@ var App = Base.extend({
       this.gm.renderLayer(this.ctx, "ground")
       this.gm.renderLayer(this.ctx, "obstacles")
       this.shipSprite.render(this.ctx)
+      this.expSprite.render(this.ctx)
       this.gm.renderLayer(this.ctx, "overlay")
   },
   moveMap: function(dx, dy) {
