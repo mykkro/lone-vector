@@ -84,11 +84,12 @@ var ExplosionEntity = Entity.extend({
 
 var ShipEntity = Entity.extend({
   constructor: function(x, y, angle) {
+    this.angle = angle
     this.base(x, y,  new RotatedSpriteSet('images/flyer-88x83.png', 88, 83, 44, 42, angle)) 
   },
   update: function(dt) {
     this.base(dt)
-    this.sprite.angle += 5
+    this.sprite.angle = this.angle
   }
 })
 
@@ -245,34 +246,64 @@ var App = Base.extend({
     $("#map-position").text(this.gm.x+","+this.gm.y)
   },
   handleInput: function(dt) {
-    if(input.isDown('DOWN') || input.isDown('s')) {
+    if(input.isDown('DOWN')) {
         //console.log("Down")
         this.moveMap(0,1)
     }
 
-    if(input.isDown('UP') || input.isDown('w')) {
+    if(input.isDown('UP')) {
         //console.log("Up")
         this.moveMap(0,-1)
     }
 
-    if(input.isDown('LEFT') || input.isDown('a')) {
+    if(input.isDown('LEFT')) {
         //console.log("Left")
         this.moveMap(-1,0)
     }
 
-    if(input.isDown('RIGHT') || input.isDown('d')) {
+    if(input.isDown('RIGHT')) {
         //console.log("Right")
         this.moveMap(1,0)
     }
 
-    if(input.isDown('SPACE')) {
+    if(input.isDown('s')) {
+        //console.log("Down")
+        this.ship.y += 1
+    }
+
+    if(input.isDown('w')) {
+        //console.log("Up")
+        this.ship.y -= 1
+    }
+
+    if(input.isDown('a')) {
+        //console.log("Left")
+        this.ship.x -= 1
+    }
+
+    if(input.isDown('d')) {
+        //console.log("Right")
+        this.ship.x += 1
+    }
+
+    if(input.isDown('z')) {
+        //console.log("Right")
+        this.ship.angle -= 5
+    }
+
+    if(input.isDown('x')) {
+        //console.log("Right")
+        this.ship.angle += 5
+    }
+
+    if(input.isDown('SPACE') && ((this.frame % 8) == 0)) {
         //console.log("Space")
-      var angle = this.ship.sprite.angle
+      var angle = this.ship.angle
       var aa = 2*Math.PI*angle/360
       var ca = Math.sin(aa)
       var sa = -Math.cos(aa)
-      var xx = Math.floor(256 + 50*ca)
-      var yy = Math.floor(256 + 50*sa)
+      var xx = Math.floor(this.ship.x + 50*ca)
+      var yy = Math.floor(this.ship.y + 50*sa)
       var ent = new Entity(xx, yy, new EightSpriteSet('images/M484BulletCollection1.png', 20, 17, 10, 8, 177, 194, angle))
       ent.dx = ca
       ent.dy = sa
