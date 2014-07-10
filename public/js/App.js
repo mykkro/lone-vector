@@ -9,7 +9,7 @@ var Pool = Base.extend({
             this.entities.splice(i, 1);
         }
     }
-    //console.log("Entity count: "+this.entities.length)
+    /**/console.log("Entity count: "+this.entities.length)
   },
   update: function(dt) {
     for(var i = this.entities.length -1; i >= 0 ; i--){
@@ -42,14 +42,25 @@ var Entity = Base.extend({
   constructor: function(x, y, sprite) {
     this.x = x
     this.y = y
+    this.speed = 0
+    this.dx = 1
+    this.dy = 0
     this.sprite = sprite
     this.alive = true
     this.entityTime = 0
+    this.duration = 0
   },
   update: function(dt) {
-    this.sprite.x = this.x
-    this.sprite.y = this.y
+    if(this.speed>0) {
+      this.x += this.speed * this.dx
+      this.y += this.speed * this.dy
+    }
+    this.sprite.x = Math.floor(this.x)
+    this.sprite.y = Math.floor(this.y)
     this.entityTime += dt
+    if(this.duration && (this.entityTime > this.duration)) {
+      this.alive = false
+    }
   },
   render: function(ctx) {
     this.sprite.render(ctx)
@@ -256,6 +267,18 @@ var App = Base.extend({
 
     if(input.isDown('SPACE')) {
         //console.log("Space")
+      var angle = this.ship.sprite.angle
+      var aa = 2*Math.PI*angle/360
+      var ca = Math.sin(aa)
+      var sa = -Math.cos(aa)
+      var xx = Math.floor(256 + 50*ca)
+      var yy = Math.floor(256 + 50*sa)
+      var ent = new Entity(xx, yy, new EightSpriteSet('images/M484BulletCollection1.png', 20, 17, 10, 8, 177, 194, angle))
+      ent.dx = ca
+      ent.dy = sa
+      ent.speed = 10
+      ent.duration = 0.5
+      this.pool.add(ent)
     }
   }
 
