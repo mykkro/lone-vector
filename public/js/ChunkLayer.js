@@ -1,32 +1,15 @@
 var ChunkLayer = Base.extend({
-  constructor: function(chunk, data) {
-    if(!data) {
-      data = {}
-    }
-    this.texture = data.texture || 'images/scifi-tileset.png'
-    this.empty = data.empty || 13 + 9*16
-    this.tiles = data.tiles || []
+  constructor: function(chunk) {
     this.chunk = chunk
-    this.textureRes = resources.get(this.texture)
-    this.changed = false
-  },
-  clear: function() {
-    var size = this.chunk.size
-    var empty = this.empty
-    this.tiles = Array.apply(null, new Array(size*size)).map(Number.prototype.valueOf,empty)
+    this.tileSize = 32
   },
   getTile: function(x, y) {
-    return this.tiles[x + this.chunk.size*y]
+    // override in subclass...
   },
   setTile: function(x, y, tile) {
-    this.tiles[x + this.chunk.size*y] = tile
-    this.changed = true
+    // override in subclass...
   },
   renderTile: function(ctx, j, i, tile) {
-      var size = 32
-      var texture = this.textureRes
-      var tx = tile % 16
-      var ty = Math.floor(tile / 16)
-      ctx.drawImage(texture, tx*size, ty*size, size, size, j*size, i*size, size, size)
+    // override in subclass...
   }
 })

@@ -78,7 +78,7 @@ var App = Base.extend({
       console.log(data);
     });
 
-    this.shipSprite = new Sprite('images/flyer-88x83.png', [88*3,83*4], [88,83], 0, 1)
+    this.shipSprite = new RotatedSpriteSet('images/flyer-88x83.png', 88, 83, 0)
   /*
   $('#btn1').click(function(){
     socket.emit('chat message', {"foo":"bar"});
@@ -101,7 +101,6 @@ var App = Base.extend({
 
     this.update(dt);
     this.render();
-    this.shipSprite.render(this.ctx)
 
     this.lastTime = now;
     var self = this
@@ -121,12 +120,18 @@ var App = Base.extend({
       this.gm.saveChangedChunks(this.socket)
     }
     this.frame++
+
+    /**/this.shipSprite.angle+=5;/**/
   },
   // Draw everything
   render: function() {
       //console.log("Rendering...")
       this.ctx.clearRect ( 0 , 0 , 512 , 512 );
-      this.gm.render(this.ctx)
+      this.gm.renderBackground(this.ctx)
+      this.gm.renderLayer(this.ctx, "ground")
+      this.gm.renderLayer(this.ctx, "obstacles")
+      this.shipSprite.render(this.ctx)
+      this.gm.renderLayer(this.ctx, "overlay")
   },
   moveMap: function(dx, dy) {
     this.gm.x += dx
