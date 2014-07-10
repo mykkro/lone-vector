@@ -9,7 +9,7 @@ var Pool = Base.extend({
             this.entities.splice(i, 1);
         }
     }
-    console.log("Entity count: "+this.entities.length)
+    //console.log("Entity count: "+this.entities.length)
   },
   update: function(dt) {
     for(var i = this.entities.length -1; i >= 0 ; i--){
@@ -47,6 +47,8 @@ var Entity = Base.extend({
     this.entityTime = 0
   },
   update: function(dt) {
+    this.sprite.x = this.x
+    this.sprite.y = this.y
     this.entityTime += dt
   },
   render: function(ctx) {
@@ -57,9 +59,6 @@ var Entity = Base.extend({
 var ExplosionEntity = Entity.extend({
   constructor: function(x,y) {
     this.base(x, y, new AnimatedSprite('images/M484ExplosionSet1.png', 34, 34, 17, 17, 90, 8, 8))
-    this.sprite.x = x
-    this.sprite.y = y
-    this.sprite.frame = 0
   },
   update: function(dt) {
     this.base(dt)
@@ -69,6 +68,16 @@ var ExplosionEntity = Entity.extend({
     } else {
       this.alive = false
     }
+  }
+})
+
+var ShipEntity = Entity.extend({
+  constructor: function(x, y, angle) {
+    this.base(x, y,  new RotatedSpriteSet('images/flyer-88x83.png', 88, 83, 44, 42, angle)) 
+  },
+  update: function(dt) {
+    this.base(dt)
+    this.sprite.angle += 5
   }
 })
 
@@ -153,9 +162,8 @@ var App = Base.extend({
       console.log(data);
     });
 
-    this.shipSprite = new RotatedSpriteSet('images/flyer-88x83.png', 88, 83, 44, 42, 0)
-    this.shipSprite.x = 32*8
-    this.shipSprite.y = 32*8
+    this.ship = new ShipEntity(32*8, 32*8, 0)
+    this.pool.add(this.ship)
 
 
   /*
@@ -206,10 +214,9 @@ var App = Base.extend({
     this.frame++
     this.pool.update(dt)
     this.pool.removeDead()
-    /**/this.shipSprite.angle+=5;/**/
-    if(this.frame % 4 == 0) {
+    //if(this.frame % 4 == 0) {
       this.addExplosion()
-    }
+    //}
   },
   // Draw everything
   render: function() {
@@ -219,7 +226,6 @@ var App = Base.extend({
       this.gm.renderLayer(this.ctx, "ground")
       this.gm.renderLayer(this.ctx, "obstacles")
       this.pool.render(this.ctx)
-      this.shipSprite.render(this.ctx)
       this.gm.renderLayer(this.ctx, "overlay")
   },
   moveMap: function(dx, dy) {
