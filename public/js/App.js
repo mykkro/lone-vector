@@ -1,4 +1,77 @@
 
+var Pool = Base.extend({
+  constructor: function() {
+    this.entities = []
+  },
+  removeDead: function() {
+    for(var i = this.entities.length -1; i >= 0 ; i--){
+        if(!this.entities[i].alive) {
+            this.entities.splice(i, 1);
+        }
+    }
+    console.log("Entity count: "+this.entities.length)
+  },
+  update: function(dt) {
+    for(var i = this.entities.length -1; i >= 0 ; i--){
+        if(this.entities[i].alive) {
+            this.entities[i].update(dt)
+        }
+    }
+  },
+  render: function(ctx) {
+    for(var i = this.entities.length -1; i >= 0 ; i--){
+        if(this.entities[i].alive) {
+            this.entities[i].render(ctx)
+        }
+    }
+  },
+  add: function(ent) {
+    this.entities.push(ent)
+  },
+  remove: function(ent) {
+    for(var i = this.entities.length -1; i >= 0 ; i--){
+        if(this.entities[i] == ent) {
+            elements.splice(i, 1);
+            return
+        }
+    }
+  }
+})
+
+var Entity = Base.extend({
+  constructor: function(x, y, sprite) {
+    this.x = x
+    this.y = y
+    this.sprite = sprite
+    this.alive = true
+    this.entityTime = 0
+  },
+  update: function(dt) {
+    this.entityTime += dt
+  },
+  render: function(ctx) {
+    this.sprite.render(ctx)
+  } 
+})
+
+var ExplosionEntity = Entity.extend({
+  constructor: function(x,y) {
+    this.base(x, y, new AnimatedSprite('images/M484ExplosionSet1.png', 34, 34, 17, 17, 90, 8, 8))
+    this.sprite.x = x
+    this.sprite.y = y
+    this.sprite.frame = 0
+  },
+  update: function(dt) {
+    this.base(dt)
+    var frame = Math.floor(this.entityTime * 16)
+    if(frame<8) {
+      this.sprite.frame = frame
+    } else {
+      this.alive = false
+    }
+  }
+})
+
 var App = Base.extend({
   constructor: function() {
     this.gameTime = 0
@@ -15,6 +88,8 @@ var App = Base.extend({
     this.gm = new GameMap(this.socket)
     this.currentTile = 9*16+13
     this.currentLayer = "overlay"
+
+    this.pool = new Pool()
 
       // Create the canvas
   	var canvas = document.createElement("canvas");
@@ -82,9 +157,7 @@ var App = Base.extend({
     this.shipSprite.x = 32*8
     this.shipSprite.y = 32*8
 
-    this.expSprite = new AnimatedSprite('images/M484ExplosionSet1.png', 34, 34, 17, 17, 90, 8, 8)
-    this.expSprite.x = 200
-    this.expSprite.y = 300
+
   /*
   $('#btn1').click(function(){
     socket.emit('chat message', {"foo":"bar"});
@@ -92,9 +165,14 @@ var App = Base.extend({
   });
 */
 
-    lastTime = Date.now();
+    this.lastTime = Date.now();
     this.main();
 
+  },
+  addExplosion: function() {
+    var x = Math.floor(Math.random()*512)
+    var y = Math.floor(Math.random()*512)
+    this.pool.add(new ExplosionEntity(x, y))
   },
   paint: function(mouseX, mouseY) {
     var x = Math.floor(mouseX / 32) + this.gm.x
@@ -126,10 +204,11 @@ var App = Base.extend({
       this.gm.saveChangedChunks(this.socket)
     }
     this.frame++
-
+    this.pool.update(dt)
+    this.pool.removeDead()
     /**/this.shipSprite.angle+=5;/**/
     if(this.frame % 4 == 0) {
-    /**/this.expSprite.frame = (this.expSprite.frame+1)%8;/**/
+      this.addExplosion()
     }
   },
   // Draw everything
@@ -139,8 +218,8 @@ var App = Base.extend({
       this.gm.renderBackground(this.ctx)
       this.gm.renderLayer(this.ctx, "ground")
       this.gm.renderLayer(this.ctx, "obstacles")
+      this.pool.render(this.ctx)
       this.shipSprite.render(this.ctx)
-      this.expSprite.render(this.ctx)
       this.gm.renderLayer(this.ctx, "overlay")
   },
   moveMap: function(dx, dy) {
