@@ -186,6 +186,10 @@ var App = Base.extend({
 */
 
     this.lastTime = Date.now();
+
+    this.ctx.beginPath();
+    this.ctx.rect(0, 0, 32*this.gm.width, 32*this.gm.height);
+    this.ctx.clip();
     this.main();
 
   },
