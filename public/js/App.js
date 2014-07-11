@@ -1,7 +1,35 @@
 
-var Pool = Base.extend({
+var Mission = Base.extend({
   constructor: function() {
+    this.spawn = {
+      x: 8,
+      y: 8,
+      angle: 90
+    }
+    this.items = [
+      {
+        type: "bonus",
+        x: 12,
+        y: 12
+      },
+      {
+        type: "bonus",
+        x: 12,
+        y: 4
+      },
+      {
+        type: "bonus",
+        x: 4,
+        y: 4
+      }
+    ]
+  }
+})
+
+var Pool = Base.extend({
+  constructor: function(gamemap) {
     this.entities = []
+    this.gamemap = gamemap
   },
   removeDead: function() {
     for(var i = this.entities.length -1; i >= 0 ; i--){
@@ -21,7 +49,7 @@ var Pool = Base.extend({
   render: function(ctx) {
     for(var i = this.entities.length -1; i >= 0 ; i--){
         if(this.entities[i].alive) {
-            this.entities[i].render(ctx)
+            this.entities[i].render(ctx, this.gamemap)
         }
     }
   },
@@ -55,14 +83,14 @@ var Entity = Base.extend({
       this.x += this.speed * this.dx
       this.y += this.speed * this.dy
     }
-    this.sprite.x = Math.floor(this.x)
-    this.sprite.y = Math.floor(this.y)
     this.entityTime += dt
     if(this.duration && (this.entityTime > this.duration)) {
       this.alive = false
     }
   },
-  render: function(ctx) {
+  render: function(ctx, gm) {
+    this.sprite.x = Math.floor(this.x - 32*gm.x)
+    this.sprite.y = Math.floor(this.y - 32*gm.y)
     this.sprite.render(ctx)
   } 
 })
@@ -122,7 +150,7 @@ var App = Base.extend({
     this.currentTile = 9*16+13
     this.currentLayer = "overlay"
 
-    this.pool = new Pool()
+    this.pool = new Pool(this.gm)
 
       // Create the canvas
   	var canvas = document.createElement("canvas");
@@ -186,11 +214,20 @@ var App = Base.extend({
       console.log(data);
     });
 
-    this.ship = new ShipEntity(32*8, 32*8, 0)
+    this.mission = new Mission()
+
+    var spawn = this.mission.spawn
+    this.ship = new ShipEntity(32*spawn.x, 32*spawn.y, spawn.angle)
     this.pool.add(this.ship)
 
-
-    this.pool.add(new RotatingGemEntity(400, 400))
+    for(var i=0; i<this.mission.items.length; i++) {
+      var it = this.mission.items[i]
+      switch(it.type) {
+        case "bonus": {
+          this.pool.add(new RotatingGemEntity(32*(it.x+0.5), 32*(it.y+0.5)))
+        }
+      }
+    }
 
   /*
   $('#btn1').click(function(){
@@ -217,7 +254,7 @@ var App = Base.extend({
   paint: function(mouseX, mouseY) {
     var x = Math.floor(this.gm.x + mouseX / 32) 
     var y = Math.floor(this.gm.y + mouseY / 32) 
-    console.log(x,y)
+    //console.log(x,y)
     this.gm.put(this.currentLayer, x, y, this.currentTile)
   },
   main: function() {
@@ -325,10 +362,12 @@ var App = Base.extend({
       var aa = 2*Math.PI*angle/360
       var ca = Math.sin(aa)
       var sa = -Math.cos(aa)
-      //this.ship.x += ca
-      //this.ship.y += sa
-      this.gm.x += 5*dt*ca
-      this.gm.y += 5*dt*sa
+      var dx = 5*dt*ca
+      var dy = 5*dt*sa
+      this.ship.x += 32*dx
+      this.ship.y += 32*dy
+      this.gm.x += dx
+      this.gm.y += dy
     }
 
 
