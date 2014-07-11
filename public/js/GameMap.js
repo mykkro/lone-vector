@@ -25,28 +25,37 @@ var GameMap = Base.extend({
   },
   renderBackground: function(ctx) {
     var size = 32
+    var sx = Math.floor(this.x)
+    var sy = Math.floor(this.y)
+    var dx = Math.floor((this.x-sx)*32)
+    var dy = Math.floor((this.y-sy)*32)
     for(var i=0; i<this.height; i++) {
       for(var j=0; j<this.width; j++) {
-        var xx = j + this.x
-        var yy = i + this.y
+        var xx = j + sx
+        var yy = i + sy
         var cx = Math.floor(xx / 16)
         var cy = Math.floor(yy / 16)
-        var x = ((xx % 16) + 16)%16
-        var y = ((yy % 16) + 16)%16
         ctx.fillStyle = "#333"; 
         if((cx+cy)%2==0) {
           ctx.fillStyle="#111"
         }
-        ctx.fillRect(j*size,i*size,size,size);
+        ctx.fillRect(j*size-dx,i*size-dy,size,size);
       }
     }
   },
   renderLayer: function(ctx, layer) {
     var size = 32
+    var sx = Math.floor(this.x)
+    var sy = Math.floor(this.y)
+    var dx = Math.floor((this.x-sx)*32)
+    var dy = Math.floor((this.y-sy)*32)
+    console.log(this.x+","+this.y+","+sx+","+sy+","+dx+","+dy)
+    ctx.save(); 
+    ctx.translate(-dx, -dy);
     for(var i=0; i<this.height; i++) {
       for(var j=0; j<this.width; j++) {
-        var xx = j + this.x
-        var yy = i + this.y
+        var xx = j + sx
+        var yy = i + sy
         var cx = Math.floor(xx / 16)
         var cy = Math.floor(yy / 16)
         var x = ((xx % 16) + 16)%16
@@ -59,6 +68,7 @@ var GameMap = Base.extend({
           }
         }
       }
+      ctx.restore();
     }
 })
 

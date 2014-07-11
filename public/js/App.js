@@ -252,22 +252,22 @@ var App = Base.extend({
   handleInput: function(dt) {
     if(input.isDown('DOWN')) {
         //console.log("Down")
-        this.moveMap(0,1)
+        this.moveMap(0,0.23)
     }
 
     if(input.isDown('UP')) {
         //console.log("Up")
-        this.moveMap(0,-1)
+        this.moveMap(0,-0.25)
     }
 
     if(input.isDown('LEFT')) {
         //console.log("Left")
-        this.moveMap(-1,0)
+        this.moveMap(-0.25,0)
     }
 
     if(input.isDown('RIGHT')) {
         //console.log("Right")
-        this.moveMap(1,0)
+        this.moveMap(0.25,0)
     }
 
     if(input.isDown('s')) {
