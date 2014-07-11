@@ -69,7 +69,7 @@ var GameMap = Base.extend({
     var sy = Math.floor(this.y)
     var dx = Math.floor((this.x-sx)*32)
     var dy = Math.floor((this.y-sy)*32)
-    console.log(this.x+","+this.y+","+sx+","+sy+","+dx+","+dy)
+    // console.log(this.x+","+this.y+","+sx+","+sy+","+dx+","+dy)
     ctx.save(); 
     ctx.translate(-dx, -dy);
     for(var i=0; i<this.height; i++) {

@@ -9,7 +9,7 @@ var Pool = Base.extend({
             this.entities.splice(i, 1);
         }
     }
-    /**/console.log("Entity count: "+this.entities.length)
+    //console.log("Entity count: "+this.entities.length)
   },
   update: function(dt) {
     for(var i = this.entities.length -1; i >= 0 ; i--){
@@ -199,6 +199,8 @@ var App = Base.extend({
   });
 */
 
+    this.font = new FixedFont('images/font_size32_512x128.png', 32, 32)
+
     this.lastTime = Date.now();
 
     this.ctx.beginPath();
@@ -258,6 +260,7 @@ var App = Base.extend({
       this.pool.render(this.ctx)
       this.gm.renderLayer(this.ctx, "overlay")
       this.gm.renderGrid(this.ctx)
+      this.font.renderText(this.ctx, 30, 30, "TESTING")
   },
   moveMap: function(dx, dy) {
     this.gm.x += dx
