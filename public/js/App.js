@@ -82,6 +82,18 @@ var ExplosionEntity = Entity.extend({
   }
 })
 
+
+var RotatingGemEntity = Entity.extend({
+  constructor: function(x,y) {
+    this.base(x, y, new AnimatedSprite('images/crystal-qubodup-ccby3-32-green.png', 32, 32, 16, 16, 0, 0, 8))
+  },
+  update: function(dt) {
+    this.base(dt)
+    var frame = Math.floor(this.entityTime * 8)
+    this.sprite.frame = frame % 8
+  }
+})
+
 var ShipEntity = Entity.extend({
   constructor: function(x, y, angle) {
     this.angle = angle
@@ -177,6 +189,8 @@ var App = Base.extend({
     this.ship = new ShipEntity(32*8, 32*8, 0)
     this.pool.add(this.ship)
 
+
+    this.pool.add(new RotatingGemEntity(400, 400))
 
   /*
   $('#btn1').click(function(){
