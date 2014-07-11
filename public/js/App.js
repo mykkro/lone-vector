@@ -21,6 +21,11 @@ var Mission = Base.extend({
         type: "bonus",
         x: 4,
         y: 4
+      },
+      {
+        type: "enemy",
+        x: 4,
+        y: 12
       }
     ]
   }
@@ -119,6 +124,15 @@ var RotatingGemEntity = Entity.extend({
     this.base(dt)
     var frame = Math.floor(this.entityTime * 8)
     this.sprite.frame = frame % 8
+  }
+})
+
+var EnemyEntity = Entity.extend({
+  constructor: function(x,y) {
+    this.base(x, y, new TiledSpriteSet('images/shmupEnemies_0.png', 51, 32, 25, 16, 5, 4, 0))
+  },
+  update: function(dt) {
+    this.base(dt)
   }
 })
 
@@ -223,9 +237,11 @@ var App = Base.extend({
     for(var i=0; i<this.mission.items.length; i++) {
       var it = this.mission.items[i]
       switch(it.type) {
-        case "bonus": {
+        case "bonus": 
           this.pool.add(new RotatingGemEntity(32*(it.x+0.5), 32*(it.y+0.5)))
-        }
+          break
+        case "enemy": 
+          this.pool.add(new EnemyEntity(32*(it.x+0.5), 32*(it.y+0.5)))
       }
     }
 
