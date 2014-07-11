@@ -188,7 +188,7 @@ var App = Base.extend({
     this.lastTime = Date.now();
 
     this.ctx.beginPath();
-    this.ctx.rect(0, 0, 32*this.gm.width, 32*this.gm.height);
+    this.ctx.rect(0, 0, 32*(this.gm.width-1), 32*(this.gm.height-1));
     this.ctx.clip();
     this.main();
 
@@ -290,6 +290,7 @@ var App = Base.extend({
         this.ship.x += 1
     }
 
+
     if(input.isDown('z')) {
         //console.log("Right")
         this.ship.angle -= 5
@@ -299,6 +300,18 @@ var App = Base.extend({
         //console.log("Right")
         this.ship.angle += 5
     }
+
+    if(input.isDown('c')) {
+      var angle = this.ship.angle
+      var aa = 2*Math.PI*angle/360
+      var ca = Math.sin(aa)
+      var sa = -Math.cos(aa)
+      //this.ship.x += ca
+      //this.ship.y += sa
+      this.gm.x += 5*dt*ca
+      this.gm.y += 5*dt*sa
+    }
+
 
     if(input.isDown('SPACE') && ((this.frame % 8) == 0)) {
         //console.log("Space")
