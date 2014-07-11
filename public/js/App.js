@@ -215,8 +215,9 @@ var App = Base.extend({
     this.pool.add(new ExplosionEntity(x, y))
   },
   paint: function(mouseX, mouseY) {
-    var x = Math.floor(mouseX / 32) + this.gm.x
-    var y = Math.floor(mouseY / 32) + this.gm.y
+    var x = Math.floor(this.gm.x + mouseX / 32) 
+    var y = Math.floor(this.gm.y + mouseY / 32) 
+    console.log(x,y)
     this.gm.put(this.currentLayer, x, y, this.currentTile)
   },
   main: function() {
