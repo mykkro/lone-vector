@@ -43,6 +43,26 @@ var GameMap = Base.extend({
       }
     }
   },
+  renderGrid: function(ctx) {
+    var size = 32
+    var sx = Math.floor(this.x)
+    var sy = Math.floor(this.y)
+    var dx = Math.floor((this.x-sx)*32)
+    var dy = Math.floor((this.y-sy)*32)
+    ctx.beginPath()
+    for (var x = 0; x <= this.width*size; x += size) {
+        ctx.moveTo(x-dx, 0-dy);
+        ctx.lineTo(x-dx, this.height*size-dy);
+    }
+
+    for (var y = 0; y <= this.height*size; y += size) {
+        ctx.moveTo(0-dx, y-dy);
+        ctx.lineTo(this.width*size-dx, y-dy);
+    }
+    ctx.lineWidth = 0.5
+    ctx.strokeStyle = "cyan";
+    ctx.stroke();    
+  },
   renderLayer: function(ctx, layer) {
     var size = 32
     var sx = Math.floor(this.x)

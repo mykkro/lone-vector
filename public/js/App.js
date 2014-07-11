@@ -257,6 +257,7 @@ var App = Base.extend({
       this.gm.renderLayer(this.ctx, "obstacles")
       this.pool.render(this.ctx)
       this.gm.renderLayer(this.ctx, "overlay")
+      this.gm.renderGrid(this.ctx)
   },
   moveMap: function(dx, dy) {
     this.gm.x += dx
