@@ -1,0 +1,46 @@
+# Publishes the game (static files in public/) to GitHub Pages.
+# One-time setup: repository Settings -> Pages -> Build and deployment -> Source: "GitHub Actions".
+name: Deploy to GitHub Pages
+
+on:
+  push:
+    branches: [main, master]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+
+      # The game needs no build step: copy just the files it uses. The map editor
+      # is left out because it needs the Node/socket.io server.
+      - name: Assemble site
+        run: |
+          mkdir -p _site/js _site/css
+          cp public/index.html _site/
+          cp public/css/game.css _site/css/
+          cp public/js/Base.js public/js/commons.js public/js/input.js _site/js/
+          cp -r public/js/game _site/js/
+          touch _site/.nojekyll
+
+      - uses: actions/configure-pages@v5
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site
+
+      - id: deployment
+        uses: actions/deploy-pages@v4

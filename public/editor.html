@@ -1,0 +1,67 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Lone Vector - Map Editor</title>
+
+  <link rel="stylesheet" href="css/style.css" />
+  <script src="/socket.io/socket.io.js"></script>
+  <script src="js/jquery-2.1.0.min.js" type="text/javascript"></script>
+  <script src="js/Resources.js" type="text/javascript"></script>
+  <script src="js/commons.js" type="text/javascript"></script>
+  <script src="js/input.js" type="text/javascript"></script>
+  <script src="js/Base.js" type="text/javascript"></script>
+  <script src="js/Sprite.js" type="text/javascript"></script>
+  <script src="js/SpriteBase.js" type="text/javascript"></script>
+  <script src="js/RotatedSpriteSet.js" type="text/javascript"></script>
+  <script src="js/EightSpriteSet.js" type="text/javascript"></script>
+  <script src="js/AnimatedSprite.js" type="text/javascript"></script>
+  <script src="js/TiledSpriteSet.js" type="text/javascript"></script>
+  <script src="js/FixedFont.js" type="text/javascript"></script>
+    <script src="js/ChunkLayer.js" type="text/javascript"></script>
+  <script src="js/TiledChunkLayer.js" type="text/javascript"></script>
+  <script src="js/Chunk.js" type="text/javascript"></script>
+  <script src="js/ChunkFactory.js" type="text/javascript"></script>
+  <script src="js/GameMap.js" type="text/javascript"></script>
+  <script src="js/App.js" type="text/javascript"></script>
+</head>
+
+<body>
+
+
+<div style="display: inline-block; width: 512px;">
+<div style="width: 512px; height: 512px; overflow: auto;">
+<img src="images/scifi-tileset.png" id="tileset" />
+</div>
+<button id="btn1">Click me</button>
+<div>Map position: <span id="map-position"></span></div>
+<div id="layer-selector"></div>
+</div>
+
+<script>
+$(function() {
+	var init = function() {
+		var app = new App()
+		app.init()
+	}
+
+	resources.load([
+	    'images/scifi-tileset.png',
+	    'images/metal-tileset.png',
+      'images/flyer-88x83.png',
+      'images/M484ExplosionSet1.png',
+      'images/M484BulletCollection1.png',
+      'images/crystal-qubodup-ccby3-32-green.png',
+      'images/font_size32_512x128.png',
+      'images/shmupEnemies_0.png'
+	]);
+	resources.onReady(init);
+
+})
+
+</script>
+
+</body>
+
+</html>
