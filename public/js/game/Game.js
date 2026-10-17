@@ -10,6 +10,8 @@ var Game = Base.extend({
     this.H = canvas.height
     this.state = 'title'
     this.stateTime = 0
+    this.missions = LEVELS
+    this.custom = null // 'editor' (play-testing from the mission editor) or 'file' (dropped mission file)
     this.score = 0
     this.hiscore = this.loadHiscore()
     this.lives = 3
@@ -60,7 +62,7 @@ var Game = Base.extend({
       self.lastTime = now
       self.update(dt)
       self.render()
-      requestAnimFrame(loop)
+      requestAnimationFrame(loop)
     }
     loop()
   },
@@ -81,8 +83,24 @@ var Game = Base.extend({
     this.carry = { weapon: 1, missiles: 5 }
     this.startLevel(0)
   },
+  // play a single mission from a mission file (see Mission.js)
+  playCustom: function(m, source) {
+    this.custom = source
+    this.missions = [Mission.toDef(m)]
+    this.newGame()
+  },
+  // after a custom mission: replay it when testing from the editor, else back to the campaign
+  customDone: function() {
+    if(this.custom == 'editor') {
+      this.newGame()
+      return
+    }
+    this.custom = null
+    this.missions = LEVELS
+    this.setState('title')
+  },
   startLevel: function(i) {
-    var def = LEVELS[i]
+    var def = this.missions[i]
     this.levelIndex = i
     this.level = new Level(def)
     this.terrain = new Terrain(this.level)
@@ -125,7 +143,7 @@ var Game = Base.extend({
       if(!(gen instanceof Generator)) continue
       for(var j = 0; j < this.enemies.length; j++) {
         var t = this.enemies[j]
-        var mine = gen.remote ? t instanceof Mothercore : (t instanceof Core && t.inst == gen.inst)
+        var mine = gen.remote ? t instanceof Mothercore : (t instanceof Core && gen.inst >= 0 && t.inst == gen.inst)
         if(mine) {
           gen.protects.push(t)
           t.shieldedBy.push(gen)
@@ -133,6 +151,8 @@ var Game = Base.extend({
       }
     }
     this.targetsTotal = this.targetsLeft()
+    // a custom mission without targets is just a flight to the gate
+    if(!this.targetsTotal) this.gate.active = true
     this.updateCamera(0, true)
     this.setState('briefing')
   },
@@ -148,7 +168,7 @@ var Game = Base.extend({
     p.alive = false
     this.bonus = {
       energy: Math.floor(Math.max(0, p.energy)) * 20,
-      time: Math.max(0, Math.floor(LEVELS[this.levelIndex].par - this.levelTime)) * 25
+      time: Math.max(0, Math.floor(this.missions[this.levelIndex].par - this.levelTime)) * 25
     }
     this.score += this.bonus.energy + this.bonus.time
     this.carry = { weapon: p.weapon, missiles: p.missiles }
@@ -214,12 +234,15 @@ var Game = Base.extend({
       case 'title':
         if(this.confirm()) this.newGame()
         break
+      case 'waiting':
+        // embedded in the mission editor until it sends a mission
+        break
       case 'briefing':
         this.terrain.prerender(12)
         if(this.terrain.progress() >= 1 && this.stateTime > 0.8 && this.confirm()) {
           this.setState('play')
-          this.message(LEVELS[this.levelIndex].name, '#ffd27a')
-          if(LEVELS[this.levelIndex].theme.space) {
+          this.message(this.missions[this.levelIndex].name, '#ffd27a')
+          if(this.missions[this.levelIndex].theme.space) {
             this.message('ENGINES NEVER STOP - ' + (TouchPad.active ? 'BRAKE BUTTON' : 'SHIFT') + ' TO BRAKE', '#9ad4ff')
           }
           Sfx.play('start')
@@ -231,13 +254,17 @@ var Game = Base.extend({
       case 'complete':
         this.particles.update(dt)
         if(this.stateTime > 1.2 && this.confirm()) {
-          if(this.levelIndex + 1 < LEVELS.length) this.startLevel(this.levelIndex + 1)
+          if(this.custom) this.customDone()
+          else if(this.levelIndex + 1 < this.missions.length) this.startLevel(this.levelIndex + 1)
           else this.setState('victory')
         }
         break
       case 'gameover':
         this.particles.update(dt)
-        if(this.stateTime > 1.5 && this.confirm()) this.setState('title')
+        if(this.stateTime > 1.5 && this.confirm()) {
+          if(this.custom) this.customDone()
+          else this.setState('title')
+        }
         break
       case 'victory':
         if(Math.random() < dt * 4) {
@@ -498,6 +525,10 @@ var Game = Base.extend({
       case 'title':
         this.renderTitle(ctx)
         break
+      case 'waiting':
+        this.renderSpace(ctx, 20)
+        this.text(ctx, 'WAITING FOR MISSION...', this.W / 2, this.H / 2, 24, '#9fb4c8', 'center')
+        break
       case 'briefing':
         this.renderBriefing(ctx)
         break
@@ -514,7 +545,7 @@ var Game = Base.extend({
       case 'gameover':
         this.renderWorld(ctx)
         this.renderHud(ctx)
-        this.renderOverlay(ctx, ['GAME OVER', '', 'SCORE ' + this.score, '', this.stateTime > 1.5 ? this.prompt('') : ''])
+        this.renderOverlay(ctx, ['GAME OVER', '', 'SCORE ' + this.score, '', this.stateTime > 1.5 ? this.prompt(this.custom == 'editor' ? 'TO TRY AGAIN' : '') : ''])
         break
       case 'victory':
         this.renderVictory(ctx)
@@ -614,7 +645,7 @@ var Game = Base.extend({
     ctx.fillRect(0, 0, W, 34)
     this.text(ctx, 'SCORE ' + this.pad(this.score, 7), 14, 23, 17, '#ffffff')
     this.text(ctx, 'HI ' + this.pad(Math.max(this.hiscore, this.score), 7), 250, 23, 17, '#9aa4b0')
-    this.text(ctx, 'MISSION ' + (this.levelIndex + 1), W / 2 + 60, 23, 17, '#ffd27a', 'left')
+    this.text(ctx, (this.custom ? 'CUSTOM' : 'MISSION ' + (this.levelIndex + 1)), W / 2 + 60, 23, 17, '#ffd27a', 'left')
     var left = this.targetsLeft()
     this.text(ctx, 'TARGETS ' + (this.targetsTotal - left) + '/' + this.targetsTotal, W - 14, 23, 17, left ? '#ffb070' : '#5affc8', 'right')
 
@@ -757,7 +788,7 @@ var Game = Base.extend({
     }
   },
   renderComplete: function(ctx) {
-    var b = this.bonus, last = this.levelIndex + 1 >= LEVELS.length
+    var b = this.bonus, last = this.levelIndex + 1 >= this.missions.length
     var lines = [
       'SECTOR CLEARED',
       '',
@@ -766,7 +797,7 @@ var Game = Base.extend({
       '',
       'SCORE         ' + this.pad(this.score, 6),
       '',
-      this.stateTime > 1.2 ? this.prompt(last ? '' : 'FOR NEXT MISSION') : ''
+      this.stateTime > 1.2 ? this.prompt(this.custom == 'editor' ? 'TO PLAY AGAIN' : (last ? '' : 'FOR NEXT MISSION')) : ''
     ]
     this.renderOverlay(ctx, lines)
   },
@@ -830,9 +861,9 @@ var Game = Base.extend({
     }
   },
   renderBriefing: function(ctx) {
-    var W = this.W, H = this.H, t = this.stateTime, def = LEVELS[this.levelIndex]
+    var W = this.W, H = this.H, t = this.stateTime, def = this.missions[this.levelIndex]
     this.renderSpace(ctx, 60)
-    this.text(ctx, 'MISSION ' + (this.levelIndex + 1) + ' OF ' + LEVELS.length, 60, 90, 20, '#9fb4c8')
+    this.text(ctx, this.custom ? 'CUSTOM MISSION' : 'MISSION ' + (this.levelIndex + 1) + ' OF ' + this.missions.length, 60, 90, 20, '#9fb4c8')
     this.text(ctx, def.name, 60, 136, 44, '#ffd27a')
     this.text(ctx, def.place, 60, 168, 16, '#ffb070')
     // briefing typed out like a terminal

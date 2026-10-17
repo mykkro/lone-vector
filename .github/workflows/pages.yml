@@ -25,15 +25,11 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      # The game needs no build step: copy just the files it uses. The map editor
-      # is left out because it needs the Node/socket.io server.
+      # No build step: the game and the mission editor are plain static files.
       - name: Assemble site
         run: |
-          mkdir -p _site/js _site/css
-          cp public/index.html _site/
-          cp public/css/game.css _site/css/
-          cp public/js/Base.js public/js/commons.js public/js/input.js _site/js/
-          cp -r public/js/game _site/js/
+          mkdir _site
+          cp -r public/. _site/
           touch _site/.nojekyll
 
       - uses: actions/configure-pages@v5

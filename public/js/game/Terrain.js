@@ -77,6 +77,13 @@ var Terrain = Base.extend({
       ctx.fillRect(((st.x - ox) % vw + vw) % vw, ((st.y - oy) % vh + vh) % vh, st.s, st.s)
     }
   },
+  // forget the chunks covering a tile range (the editor calls this after changes)
+  invalidate: function(tx0, ty0, tx1, ty1) {
+    var per = CHUNK / TS
+    for(var cy = Math.floor((ty0 - 1) / per); cy <= Math.floor((ty1 + 1) / per); cy++) {
+      for(var cx = Math.floor((tx0 - 1) / per); cx <= Math.floor((tx1 + 1) / per); cx++) delete this.chunks[cx + ',' + cy]
+    }
+  },
   getChunk: function(cx, cy) {
     var key = cx + ',' + cy
     if(!this.chunks[key]) this.chunks[key] = this.renderChunk(cx, cy)

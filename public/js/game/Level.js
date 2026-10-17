@@ -15,7 +15,60 @@ var Level = Base.extend({
     this.installations = []
     this.spawns = []
     this.rng = new Rng(def.seed)
-    this.generate()
+    if(def.map) this.loadMap(def.map)
+    else this.generate()
+  },
+
+  // hand-made map from a mission file (see Mission.js)
+  loadMap: function(m) {
+    var w = this.w = m.w, h = this.h = m.h
+    this.tiles = new Uint8Array(w * h)
+    for(var i = 0; i < w * h; i++) this.tiles[i] = (m.tiles.charCodeAt(i) - 48) & 3
+    for(i = 0; i < m.blocks.length; i++) {
+      var b = m.blocks[i]
+      if(this.get(b[0], b[1]) == TILE.FLOOR) this.addBlock(b[0], b[1])
+    }
+    this.spawnTile = { tx: m.spawn[0], ty: m.spawn[1] }
+    this.spawn = { x: (m.spawn[0] + 0.5) * TS, y: (m.spawn[1] + 0.5) * TS }
+    this.findInstallations()
+    for(i = 0; i < m.entities.length; i++) {
+      var e = m.entities[i]
+      this.spawns.push({ type: e.type, kind: e.kind || 'E', remote: !!e.remote, x: (e.tx + 0.5) * TS, y: (e.ty + 0.5) * TS, inst: this.instAt(e.tx, e.ty) })
+    }
+  },
+  // every connected group of base floor / wall tiles counts as one installation
+  findInstallations: function() {
+    var w = this.w, h = this.h
+    this.zone = new Int16Array(w * h)
+    this.installations = []
+    for(var start = 0; start < w * h; start++) {
+      var t = this.tiles[start]
+      if(this.zone[start] || (t != TILE.FLOOR && t != TILE.WALL)) continue
+      var id = this.installations.length
+      var stack = [start], x0 = w, y0 = h, x1 = 0, y1 = 0
+      this.zone[start] = id + 1
+      while(stack.length) {
+        var i = stack.pop(), tx = i % w, ty = (i / w) | 0
+        x0 = Math.min(x0, tx)
+        y0 = Math.min(y0, ty)
+        x1 = Math.max(x1, tx)
+        y1 = Math.max(y1, ty)
+        for(var dy = -1; dy <= 1; dy++) {
+          for(var dx = -1; dx <= 1; dx++) {
+            var nx = tx + dx, ny = ty + dy
+            if(!this.inside(nx, ny)) continue
+            var j = ny * w + nx, nt = this.tiles[j]
+            if(this.zone[j] || (nt != TILE.FLOOR && nt != TILE.WALL)) continue
+            this.zone[j] = id + 1
+            stack.push(j)
+          }
+        }
+      }
+      this.installations.push({ id: id, ox: x0, oy: y0, W: x1 - x0 + 1, H: y1 - y0 + 1 })
+    }
+  },
+  instAt: function(tx, ty) {
+    return this.inside(tx, ty) ? this.zone[ty * this.w + tx] - 1 : -1
   },
 
   inside: function(tx, ty) {
@@ -218,13 +271,21 @@ var Level = Base.extend({
       console.warn('Could not place installation ' + id)
       return
     }
+    this.buildInstallation(spec, id, ox, oy)
+  },
+  // walls, doors and contents of a grid installation with its top-left corner at ox, oy.
+  // spec.empty skips the contents, spec.noMargin keeps the surrounding tiles (editor stamp).
+  buildInstallation: function(spec, id, ox, oy) {
+    var rng = this.rng, tries, tx, ty
+    var W = spec.cols * CELL + 1, H = spec.rows * CELL + 1
     var inst = { id: id, ox: ox, oy: oy, W: W, H: H, spec: spec }
     this.installations.push(inst)
 
     // clear margin of open ground around the compound
-    for(var ty = oy - 2; ty <= oy + H + 1; ty++) {
-      for(var tx = ox - 2; tx <= ox + W + 1; tx++) {
-        this.set(tx, ty, TILE.GROUND)
+    for(ty = oy - 2; ty <= oy + H + 1; ty++) {
+      for(tx = ox - 2; tx <= ox + W + 1; tx++) {
+        if(!this.inside(tx, ty)) continue
+        if(!spec.noMargin) this.set(tx, ty, TILE.GROUND)
         this.zone[ty * this.w + tx] = id + 1
       }
     }
@@ -279,6 +340,7 @@ var Level = Base.extend({
       if(side == 3) door = { tx: ox + W + 1, ty: oy + cell * CELL + 3 }
       if(!inst.door) inst.door = door
     }
+    if(spec.empty) return inst
 
     // fill the cells
     var cells = []
@@ -325,6 +387,7 @@ var Level = Base.extend({
         break
       }
     }
+    return inst
   },
   openDoor: function(inst, c0, r0, c1, r1, blocked) {
     for(var k = 2; k <= 4; k++) {

@@ -1,67 +1,197 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Lone Vector - Map Editor</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Lone Vector - Mission Editor</title>
 
-  <link rel="stylesheet" href="css/style.css" />
-  <script src="/socket.io/socket.io.js"></script>
-  <script src="js/jquery-2.1.0.min.js" type="text/javascript"></script>
-  <script src="js/Resources.js" type="text/javascript"></script>
-  <script src="js/commons.js" type="text/javascript"></script>
-  <script src="js/input.js" type="text/javascript"></script>
+  <link rel="stylesheet" href="css/editor.css" />
   <script src="js/Base.js" type="text/javascript"></script>
-  <script src="js/Sprite.js" type="text/javascript"></script>
-  <script src="js/SpriteBase.js" type="text/javascript"></script>
-  <script src="js/RotatedSpriteSet.js" type="text/javascript"></script>
-  <script src="js/EightSpriteSet.js" type="text/javascript"></script>
-  <script src="js/AnimatedSprite.js" type="text/javascript"></script>
-  <script src="js/TiledSpriteSet.js" type="text/javascript"></script>
-  <script src="js/FixedFont.js" type="text/javascript"></script>
-    <script src="js/ChunkLayer.js" type="text/javascript"></script>
-  <script src="js/TiledChunkLayer.js" type="text/javascript"></script>
-  <script src="js/Chunk.js" type="text/javascript"></script>
-  <script src="js/ChunkFactory.js" type="text/javascript"></script>
-  <script src="js/GameMap.js" type="text/javascript"></script>
-  <script src="js/App.js" type="text/javascript"></script>
+  <script src="js/game/Rng.js" type="text/javascript"></script>
+  <script src="js/game/Gfx.js" type="text/javascript"></script>
+  <script src="js/game/Levels.js" type="text/javascript"></script>
+  <script src="js/game/Level.js" type="text/javascript"></script>
+  <script src="js/game/Terrain.js" type="text/javascript"></script>
+  <script src="js/game/Mission.js" type="text/javascript"></script>
+  <script src="js/editor/Editor.js" type="text/javascript"></script>
 </head>
 
 <body>
 
+<header>
+  <div class="brand">LONE VECTOR <span>mission editor</span></div>
+  <div class="actions">
+    <button id="btn-new" title="Start a new mission">New...</button>
+    <button id="btn-save" title="Save to this browser (Ctrl+S)">Save</button>
+    <button id="btn-export" title="Download the mission as a JSON file">Export</button>
+    <button id="btn-import" title="Load a mission JSON file">Import</button>
+    <input type="file" id="file-import" accept=".json,application/json" hidden>
+    <span class="sep"></span>
+    <button id="btn-undo" title="Undo (Ctrl+Z)">Undo</button>
+    <button id="btn-redo" title="Redo (Ctrl+Y)">Redo</button>
+    <span class="sep"></span>
+    <label class="check"><input type="checkbox" id="opt-preview" checked> terrain preview</label>
+    <label class="check"><input type="checkbox" id="opt-grid" checked> grid</label>
+  </div>
+  <button id="btn-play" class="play" title="Play-test this mission (F5)">&#9654; Play mission</button>
+  <a href="index.html" class="back">back to game</a>
+</header>
 
-<div style="display: inline-block; width: 512px;">
-<div style="width: 512px; height: 512px; overflow: auto;">
-<img src="images/scifi-tileset.png" id="tileset" />
+<div id="main">
+  <aside id="tools">
+    <h3>Terrain</h3>
+    <div class="toolgrid" data-group="terrain"></div>
+    <div class="row">
+      <span class="lbl">Shape</span>
+      <div class="seg" id="shape">
+        <button data-shape="brush" class="on" title="Free brush">brush</button>
+        <button data-shape="rect" title="Filled rectangle">rect</button>
+        <button data-shape="outline" title="Rectangle outline">frame</button>
+      </div>
+    </div>
+    <div class="row">
+      <span class="lbl">Size</span>
+      <div class="seg" id="brush">
+        <button data-size="1" class="on">1</button>
+        <button data-size="2">2</button>
+        <button data-size="3">3</button>
+        <button data-size="5">5</button>
+      </div>
+    </div>
+
+    <h3>Bases</h3>
+    <div class="toolgrid" data-group="bases"></div>
+    <div class="row">
+      <span class="lbl">Cells</span>
+      <input type="number" id="stamp-cols" min="1" max="8" value="3"> &times;
+      <input type="number" id="stamp-rows" min="1" max="8" value="2">
+    </div>
+    <div class="row">
+      <span class="lbl">Blocks</span>
+      <select id="stamp-blocks">
+        <option value="0">none</option>
+        <option value="0.25" selected>some doors</option>
+        <option value="0.6">most doors</option>
+      </select>
+    </div>
+
+    <h3>Objects</h3>
+    <div class="toolgrid" data-group="objects"></div>
+
+    <h3>Edit</h3>
+    <div class="toolgrid" data-group="edit"></div>
+
+    <div class="help">
+      <b>Mouse</b> left: use tool &middot; right: erase<br>
+      wheel: zoom &middot; middle / space+drag: pan<br>
+      <b>Keys</b> letters pick tools (see tooltips)<br>
+      H: fit map &middot; Del: delete selected<br>
+      Ctrl+Z / Ctrl+Y &middot; Ctrl+S &middot; F5: play
+    </div>
+  </aside>
+
+  <div id="view">
+    <canvas id="canvas"></canvas>
+    <div id="status"></div>
+    <div id="toast" hidden></div>
+  </div>
+
+  <aside id="props">
+    <h3>Mission</h3>
+    <label>Name <input type="text" id="f-name" maxlength="28"></label>
+    <label>Location <input type="text" id="f-place" maxlength="36"></label>
+    <label>Theme
+      <select id="f-theme">
+        <option value="desert">Desert planet</option>
+        <option value="ice">Ice planet</option>
+        <option value="lava">Magma planet</option>
+        <option value="orbit">Space: orbit</option>
+        <option value="belt">Space: asteroid belt</option>
+      </select>
+    </label>
+    <div class="pair">
+      <label>Energy drain/s <input type="number" id="f-drain" min="0" max="5" step="0.05"></label>
+      <label>Par time (s) <input type="number" id="f-par" min="30" max="1800" step="10"></label>
+    </div>
+    <label>Turret burst
+      <select id="f-burst">
+        <option value="1">1 shot</option>
+        <option value="2">2 shots</option>
+        <option value="3">3 shots</option>
+      </select>
+    </label>
+    <label>Briefing <small>(one line per row, about 40 characters)</small>
+      <textarea id="f-brief" rows="5" wrap="off"></textarea>
+    </label>
+    <div class="pair size">
+      <label>Width <input type="number" id="f-w" min="24" max="160"></label>
+      <label>Height <input type="number" id="f-h" min="24" max="160"></label>
+      <button id="btn-resize" title="Resize the map (keeps the top-left corner)">Resize</button>
+    </div>
+
+    <h3>Selected</h3>
+    <div id="selected" class="muted">Nothing selected. Use the select tool (V).</div>
+
+    <h3>Check</h3>
+    <ul id="problems"></ul>
+
+    <h3>Saved in this browser</h3>
+    <ul id="library"></ul>
+  </aside>
 </div>
-<button id="btn1">Click me</button>
-<div>Map position: <span id="map-position"></span></div>
-<div id="layer-selector"></div>
+
+<div id="dialog-new" class="modal" hidden>
+  <div class="box">
+    <h2>New mission</h2>
+    <label class="radio"><input type="radio" name="newkind" value="template" checked>
+      Generate from a built-in mission
+    </label>
+    <div class="indent">
+      <select id="new-template"></select>
+      <div class="row">
+        <span class="lbl">Seed</span>
+        <input type="number" id="new-seed">
+        <button id="new-dice" title="Random seed">dice</button>
+      </div>
+    </div>
+    <label class="radio"><input type="radio" name="newkind" value="blank">
+      Blank map
+    </label>
+    <div class="indent">
+      <div class="row">
+        <select id="new-theme">
+          <option value="desert">Desert planet</option>
+          <option value="ice">Ice planet</option>
+          <option value="lava">Magma planet</option>
+          <option value="orbit">Space: orbit</option>
+          <option value="belt">Space: asteroid belt</option>
+        </select>
+        <input type="number" id="new-w" min="24" max="160" value="64"> &times;
+        <input type="number" id="new-h" min="24" max="160" value="64">
+      </div>
+    </div>
+    <div class="buttons">
+      <button id="new-cancel">Cancel</button>
+      <button id="new-create" class="play">Create</button>
+    </div>
+  </div>
+</div>
+
+<div id="play-overlay" hidden>
+  <div class="bar">
+    <span id="play-title">Play-testing</span>
+    <button id="play-restart" title="Start the mission again">Restart</button>
+    <button id="play-close" class="play" title="Back to the editor">Back to editor</button>
+  </div>
+  <iframe id="play-frame" title="Play-test" allow="fullscreen"></iframe>
 </div>
 
 <script>
-$(function() {
-	var init = function() {
-		var app = new App()
-		app.init()
-	}
-
-	resources.load([
-	    'images/scifi-tileset.png',
-	    'images/metal-tileset.png',
-      'images/flyer-88x83.png',
-      'images/M484ExplosionSet1.png',
-      'images/M484BulletCollection1.png',
-      'images/crystal-qubodup-ccby3-32-green.png',
-      'images/font_size32_512x128.png',
-      'images/shmupEnemies_0.png'
-	]);
-	resources.onReady(init);
-
+window.addEventListener('load', function() {
+  Gfx.init()
+  window.editor = new Editor()
 })
-
 </script>
 
 </body>
-
 </html>

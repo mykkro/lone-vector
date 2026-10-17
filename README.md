@@ -14,13 +14,14 @@ game uses no image or audio files.
 
 The game is plain HTML5 canvas and JavaScript, with no build step.
 
+- **Online:** https://mykkro.github.io/lone-vector/ (the mission editor is at `editor.html`).
 - **No server needed:** open `public/index.html` in a browser.
 - **With the bundled server:** run `npm install`, then `npm start`, then open http://localhost:3000.
 
 ### Deploy to GitHub Pages
 
-The workflow in `.github/workflows/pages.yml` publishes the game on every push to `main` or `master`.
-It copies only the files the game needs. The map editor is left out because it needs the Node server.
+The workflow in `.github/workflows/pages.yml` publishes `public/` (the game and the mission editor)
+on every push to `main` or `master`.
 
 1. Create a repository on GitHub and push this project to it:
    ```sh
@@ -96,6 +97,39 @@ Missions 3 and 4 take place in space. There is no ground to stop on, so the engi
 
 ![Mission 3 - Orbital Docks](docs/space.png)
 
+## Mission editor
+
+Open **`editor.html`**, or use the "mission editor" link in the corner of the game page. The editor runs entirely
+in the browser and needs no server.
+
+![Mission editor](docs/editor.png)
+
+- **Start** from a blank map, or have the editor generate one of the five campaign missions from any seed
+  (**New...**). You can then reshape the result by hand.
+- **Terrain:** paint ground or space, rock or asteroids, base floor, walls and destructible armored blocks.
+  You can paint with a brush, a filled rectangle or a rectangle frame. Right-click paints empty ground.
+- **Base stamp (B):** click to drop a walled grid of cells with random doors and entrances. You can set the
+  number of cells and how many doorways get sealed with blocks.
+- **Objects:** the landing zone (which is also the warp gate), reactor cores, the Mothercore, shield generators
+  and remote generators, turrets, drone spawners, drones, fighters, mines, and E/P/M pickups. Right-click erases.
+  The select tool (V) moves objects and edits their options.
+- **Shields work the same way as in the game.** A generator shields every reactor core in the same base. A base
+  is any connected group of floor and wall tiles. A *remote* generator shields the Mothercore. The editor draws
+  dashed lines for these links.
+- **Check panel:** lists problems such as no targets, a landing zone inside a wall, targets you can't reach, or
+  a generator with nothing to shield. Click a problem to jump to it on the map.
+- **Mission settings:** name, location, theme (three planets, two space themes), energy drain, par time, turret
+  burst, briefing text and map size.
+- **Play mission (F5):** runs the mission in the real game in an overlay. When you finish or die, Enter replays
+  it. **Restart** sends your latest version. **Back to editor** returns to editing.
+- **Saving:** **Save** keeps missions in the browser (listed on the right). The current draft is also kept
+  automatically. **Export** and **Import** use `.lonevector.json` files. You can also drop an exported file onto
+  the game page to play it.
+- Undo/redo (Ctrl+Z / Ctrl+Y), zoom with the mouse wheel, pan with the middle button or Space+drag,
+  H fits the map in view. Each tool has a one-letter shortcut, shown in its tooltip.
+
+The mission file format is documented at the top of `public/js/game/Mission.js`.
+
 ## How it works
 
 - **Levels** (`public/js/game/Level.js`) are generated from a fixed seed for each mission. Noise and a
@@ -108,11 +142,11 @@ Missions 3 and 4 take place in space. There is no ground to stop on, so the engi
   logic is the same for keyboard and touch.
 - **Sprites** (`Gfx.js`) are drawn with canvas paths and gradients at startup. **Sound** (`Sfx.js`) is synthesized
   with WebAudio.
-- `public/editor.html` is the original chunk-based tile map editor. It needs the server running (`npm start`).
+- **Missions** (`Mission.js`) are the shared file format. A level loads either from a seed (the campaign) or from
+  a hand-made map (the editor). In a hand-made map, every connected group of floor and wall tiles counts as a base.
 
 ![Title screen](docs/title.png)
 
 ## License
 
-The code is under the [MIT License](LICENSE). Third-party files keep their own licenses: `Base.js` (Dean Edwards, MIT),
-jQuery (MIT), and the CC-licensed images in `public/images`, which only the map editor uses.
+The code is under the [MIT License](LICENSE). `public/js/Base.js` is by Dean Edwards and is also MIT licensed.
